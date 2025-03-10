@@ -1,0 +1,8 @@
+'use client';
+
+import Home from '../page';
+
+// Development version of the app that skips intro animations
+export default function DevHome() {
+  return <Home skipIntro={true} />;
+}
