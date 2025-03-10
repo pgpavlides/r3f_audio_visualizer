@@ -1,101 +1,138 @@
-import Image from "next/image";
+'use client';
+
+import { Suspense, useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import Preloader from "./components/preloader";
+
+// Use dynamic import with SSR disabled for the visualizers
+const LineVisualizer = dynamic(
+  () => import("./components/LineVisualizer"),
+  { ssr: false }
+);
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [audioSrc, setAudioSrc] = useState('/audio/song.mp3');
+  
+  // State for controlling each phase of the sequence
+  const [showPreloader, setShowPreloader] = useState(true);  // 1. LogoGP.svg with loading bar
+  const [preloaderFadingOut, setPreloaderFadingOut] = useState(false); // 2. Preloader fading out
+  const [progress, setProgress] = useState(0);
+  const [showAppLogo, setShowAppLogo] = useState(false);    // 3. audio-visualizer-logo.svg appears
+  const [showContent, setShowContent] = useState(false);     // 5. Content appears as background fades
+  
+  // Simulate loading progress
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(timer);
+          
+          // EXACTLY SEQUENCED STEPS:
+          
+          // 2. Loading bar fills, BOTH LogoGP.svg AND loading bar fade out
+          setTimeout(() => {
+            setPreloaderFadingOut(true);
+            
+            // Wait for fade out, then remove preloader and show app logo
+            setTimeout(() => {
+              setShowPreloader(false);
+              
+              // 3. Wait a moment, then show audio-visualizer-logo.svg
+              setTimeout(() => {
+                setShowAppLogo(true);
+                
+                // 4. After a while, fade out the application logo
+                setTimeout(() => {
+                  setShowAppLogo(false);
+                  
+                  // 5. After logo is gone, fade in the content
+                  setTimeout(() => {
+                    setShowContent(true);
+                  }, 1000);
+                }, 2000);
+              }, 300);
+            }, 1000); // Time for preloader to fade out
+          }, 500);
+          
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 100);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  // Listen for audio selection
+  useEffect(() => {
+    const handleAudioSelected = (event) => {
+      setAudioSrc(event.detail.src);
+    };
+    
+    window.addEventListener('audio-selected', handleAudioSelected);
+    return () => {
+      window.removeEventListener('audio-selected', handleAudioSelected);
+    };
+  }, []);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  return (
+    <div className="h-screen w-screen overflow-hidden bg-black relative">
+      {/* 1. LogoGP.svg with loading bar */}
+      {showPreloader && (
+        <div 
+          style={{
+            opacity: preloaderFadingOut ? 0 : 1,
+            transition: 'opacity 1s ease-in-out',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            zIndex: 40
+          }}
+        >
+          <Preloader 
+            active={true} 
+            progress={progress} 
+            logoSrc="/logo/LogoGP.svg"
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+      
+      {/* 3. audio-visualizer-logo.svg appears with fade in */}
+      <div 
+        className="fixed inset-0 z-30 flex items-center justify-center bg-black"
+        style={{
+          opacity: showAppLogo ? 1 : 0,
+          visibility: showAppLogo ? 'visible' : 'hidden',
+          transition: 'opacity 1s ease-in-out, visibility 0s ' + (showAppLogo ? '0s' : '1s')
+        }}
+      >
+        <img 
+          src="/logo/audio-visualizer-logo.svg" 
+          alt="Audio Visualizer Logo" 
+          className="w-64 h-64 object-contain"
+        />
+      </div>
+
+      {/* 5. Content appears as black background fades */}
+      <div 
+        className="fixed inset-0 z-20"
+        style={{
+          opacity: showContent ? 1 : 0,
+          transition: 'opacity 1s ease-in-out',
+          height: '100%',
+          width: '100%'
+        }}
+      >
+        <Suspense fallback={
+          <div className="h-full flex items-center justify-center">
+            <div className="text-sm text-white">Loading visualizer...</div>
+          </div>
+        }>
+          <LineVisualizer audioSrc={audioSrc} />
+        </Suspense>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,8 @@
+This is where you should place the 'song.mp3' file. 
+
+Since I cannot actually create an MP3 file for you, you'll need to:
+1. Rename your audio file to 'song.mp3'
+2. Place it in this directory (/public/audio/)
+3. Or use the file upload feature in the app
+
+The visualizer will look for this file by default.
